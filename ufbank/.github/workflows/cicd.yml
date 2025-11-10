@@ -1,0 +1,139 @@
+name: UFBank - CI/CD PoC Pipeline 
+
+# 1. DEFINIR GATILHOS (TRIGGERS)
+# Roda em pushes e pull requests para o branch 'main'
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ===============================================
+  # JOB 1: LINT E TESTES
+  # ===============================================
+  lint-and-test:
+    name: Lint e Testes Unitários
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (v20+) com cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+          cache: 'npm' 
+
+      - name: Instalar dependências
+        run: npm ci # 'ci' é mais rápido e determinístico [3]
+
+      - name: Executar ESLint (para TypeScript)
+        run: npm run lint # Executa o script 'lint' do package.json
+
+      - name: Executar testes
+        run: npm run test:ci # Executa o script 'test:ci' (jest --ci) [3]
+
+  # ===============================================
+  # JOB 2: SCANS DE SEGURANÇA (DEVSECOPS)
+  # ===============================================
+  security-scan:
+    name: Varreduras de Segurança (DevSecOps)
+    runs-on: ubuntu-latest
+    needs: lint-and-test 
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Instalar dependências
+        run: npm ci
+
+      # --- SCA (Software Composition Analysis) ---
+      - name: 1. Scan de Dependências (SCA)
+        # Implementa um "security gate" condicional (orçamento de segurança):
+        # Falha o pipeline APENAS se houver vulnerabilidades altas ou críticas
+        run: npm audit --audit-level=high 
+
+      # --- SAST (Static Application Security Testing) ---
+      - name: 2. Scan Estático de Código (SAST) com CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: 'typescript' # Especifica a linguagem [4, 5]
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Executar análise CodeQL
+        uses: github/codeql-action/analyze@v3
+
+      # --- DAST (Dynamic Application Security Testing) ---
+      - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
+        run: |
+          # Constrói e inicia a aplicação em background
+          npm run build
+          npm run start &
+          # Aguarda a aplicação iniciar
+          sleep 20 
+          # [4]
+
+      - name: Executar OWASP ZAP Scan
+        uses: zaproxy/action-full-scan@v0.7.0
+        with:
+          target: 'http://localhost:3000'
+          # [4]
+
+  # ===============================================
+  # JOB 3: CONSTRUIR E PUBLICAR ARTEFATOS (DOCKER HUB)
+  # ===============================================
+  build-and-push:
+    name: Construir e Publicar Imagem Docker
+    runs-on: ubuntu-latest
+    # Depende da passagem dos jobs de teste e segurança
+    needs: [lint-and-test, security-scan] 
+    # Roda APENAS em merge (push) no 'main', não em Pull Requests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          #
+
+      - name: Extrair metadados (tags) para o Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/ufbank 
+          tags: |
+            type=sha,prefix=,format=short # Usa o hash curto do commit como tag
+
+      - name: Construir e Enviar imagem para o Docker Hub
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          #
+
+      - name: Configurar Node.js (para bundle)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Instalar dependências (para bundle)
+        run: npm ci
+      - name: Construir bundle Next.js
+        run: npm run build # [6]
+      - name: Upload do bundle Next.js como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-bundle
+          path: ./.next/
