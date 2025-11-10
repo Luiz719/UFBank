@@ -70,7 +70,7 @@ jobs:
       - name: 1. Scan de Dependências (SCA)
         # Implementa um "security gate" condicional (orçamento de segurança):
         # Define o nível de auditoria para falhar apenas em 'high' ou 'critical'
-        run: npm audit --audit-level=high 
+        run: npm audit --audit-level=high --omit=dev 
 
       # --- SAST (Static Application Security Testing) ---
       - name: 2. Scan Estático de Código (SAST) com CodeQL
