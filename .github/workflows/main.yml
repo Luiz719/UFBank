@@ -15,15 +15,21 @@ jobs:
   lint-and-test:
     name: Lint e Testes Unitários
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./ufbank
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js (v20+) com cache
+      - name: Configurar Node.js 
         uses: actions/setup-node@v4
         with:
           node-version: '20' 
           cache: 'npm' 
+          cache-dependency-path: ufbank/package-lock.json
 
       - name: Instalar dependências
         run: npm ci # 'ci' é mais rápido e determinístico [3]
@@ -41,6 +47,11 @@ jobs:
     name: Varreduras de Segurança (DevSecOps)
     runs-on: ubuntu-latest
     needs: lint-and-test 
+
+    defaults:
+      run:
+        working-directory: ./ufbank 
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -50,20 +61,24 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: ufbank/package-lock.json 
+
       - name: Instalar dependências
         run: npm ci
 
       # --- SCA (Software Composition Analysis) ---
       - name: 1. Scan de Dependências (SCA)
         # Implementa um "security gate" condicional (orçamento de segurança):
-        # Falha o pipeline APENAS se houver vulnerabilidades altas ou críticas
+        # Define o nível de auditoria para falhar apenas em 'high' ou 'critical'
         run: npm audit --audit-level=high 
 
       # --- SAST (Static Application Security Testing) ---
       - name: 2. Scan Estático de Código (SAST) com CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: 'typescript' # Especifica a linguagem [4, 5]
+          languages: 'typescript' 
+          source-root: ufbank
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
       - name: Executar análise CodeQL
@@ -118,6 +133,8 @@ jobs:
       - name: Construir e Enviar imagem para o Docker Hub
         uses: docker/build-push-action@v5
         with:
+          context: ./ufbank
+          file: ./ufbank/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -128,10 +145,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: ufbank/package-lock.json
+
       - name: Instalar dependências (para bundle)
         run: npm ci
+        working-directory: ./ufbank 
       - name: Construir bundle Next.js
         run: npm run build # [6]
+        working-directory: ./ufbank 
+
       - name: Upload do bundle Next.js como artefato
         uses: actions/upload-artifact@v4
         with:
