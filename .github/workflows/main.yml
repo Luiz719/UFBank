@@ -34,7 +34,7 @@ jobs:
       - name: Instalar dependências
         run: npm ci # 'ci' é mais rápido e determinístico [3]
 
-      - name: Executar ESLint (para TypeScript)
+      - name: Executar ESLint 
         run: npm run lint # Executa o script 'lint' do package.json
 
       - name: Executar testes
@@ -151,7 +151,7 @@ jobs:
         run: npm ci
         working-directory: ./ufbank 
       - name: Construir bundle Next.js
-        run: npm run build # [6]
+        run: npm run build 
         working-directory: ./ufbank 
 
       - name: Upload do bundle Next.js como artefato
