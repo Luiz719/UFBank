@@ -89,15 +89,15 @@ jobs:
       # - name: Executar análise CodeQL
       #   uses: github/codeql-action/analyze@v3
 
-      # # --- DAST (Dynamic Application Security Testing) ---
-      # - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
-      #   run: |
-      #     # Constrói e inicia a aplicação em background
-      #     npm run build
-      #     npm run start &
-      #     # Aguarda a aplicação iniciar
-      #     sleep 20 
-      #     # [4]
+      # --- DAST (Dynamic Application Security Testing) ---
+      - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
+        run: |
+          # Constrói e inicia a aplicação em background
+          npm run build
+          npm run start &
+          # Aguarda a aplicação iniciar
+          sleep 20 
+          # [4]
 
       - name: Executar OWASP ZAP Scan
         uses: zaproxy/action-full-scan@v0.11.0
