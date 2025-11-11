@@ -11,8 +11,8 @@ on:
 permissions:
   contents: read
   security-events: write  
-  issues: write           
-
+  issues: write   
+          
 jobs:
   # ===============================================
   # JOB 1: LINT E TESTES
@@ -159,7 +159,7 @@ jobs:
         working-directory: ./ufbank 
 
       - name: Upload do bundle Next.js como artefato
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: nextjs-bundle
           path: ./.next/
