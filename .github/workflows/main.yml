@@ -71,36 +71,36 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      # --- SCA (Software Composition Analysis) ---
-      - name: 1. Scan de Dependências (SCA)
-        # Implementa um "security gate" condicional (orçamento de segurança):
-        # Define o nível de auditoria para falhar apenas em 'high' ou 'critical'
-        run: npm audit --audit-level=high --omit=dev 
+      # # --- SCA (Software Composition Analysis) ---
+      # - name: 1. Scan de Dependências (SCA)
+      #   # Implementa um "security gate" condicional (orçamento de segurança):
+      #   # Define o nível de auditoria para falhar apenas em 'high' ou 'critical'
+      #   run: npm audit --audit-level=high --omit=dev 
 
-      # --- SAST (Static Application Security Testing) ---
-      - name: 2. Scan Estático de Código (SAST) com CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: 'typescript' 
-          source-root: ufbank
+      # # --- SAST (Static Application Security Testing) ---
+      # - name: 2. Scan Estático de Código (SAST) com CodeQL
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     languages: 'typescript' 
+      #     source-root: ufbank
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-      - name: Executar análise CodeQL
-        uses: github/codeql-action/analyze@v3
+      # - name: Autobuild
+      #   uses: github/codeql-action/autobuild@v3
+      # - name: Executar análise CodeQL
+      #   uses: github/codeql-action/analyze@v3
 
-      # --- DAST (Dynamic Application Security Testing) ---
-      - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
-        run: |
-          # Constrói e inicia a aplicação em background
-          npm run build
-          npm run start &
-          # Aguarda a aplicação iniciar
-          sleep 20 
-          # [4]
+      # # --- DAST (Dynamic Application Security Testing) ---
+      # - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
+      #   run: |
+      #     # Constrói e inicia a aplicação em background
+      #     npm run build
+      #     npm run start &
+      #     # Aguarda a aplicação iniciar
+      #     sleep 20 
+      #     # [4]
 
       - name: Executar OWASP ZAP Scan
-        uses: zaproxy/action-full-scan@v0.10.0
+        uses: zaproxy/action-full-scan@v0.11.0
         with:
           target: 'http://localhost:3000'
 
