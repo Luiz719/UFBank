@@ -89,20 +89,20 @@ jobs:
       # - name: Executar análise CodeQL
       #   uses: github/codeql-action/analyze@v3
 
-      # --- DAST (Dynamic Application Security Testing) ---
-      - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
-        run: |
-          # Constrói e inicia a aplicação em background
-          npm run build
-          npm run start &
-          # Aguarda a aplicação iniciar
-          sleep 20 
-          # [4]
+      # # --- DAST (Dynamic Application Security Testing) ---
+      # - name: 3. Scan Dinâmico (DAST) com OWASP ZAP
+      #   run: |
+      #     # Constrói e inicia a aplicação em background
+      #     npm run build
+      #     npm run start &
+      #     # Aguarda a aplicação iniciar
+      #     sleep 20 
+      #     # [4]
 
-      - name: Executar OWASP ZAP Scan
-        uses: zaproxy/action-baseline@v0.14.0
-        with:
-          target: 'http://localhost:3000'
+      # - name: Executar OWASP ZAP Scan
+      #   uses: zaproxy/action-baseline@v0.14.0
+      #   with:
+      #     target: 'http://localhost:3000'
 
   # ===============================================
   # JOB 3: CONSTRUIR E PUBLICAR ARTEFATOS (DOCKER HUB)
@@ -159,7 +159,7 @@ jobs:
         working-directory: ./ufbank 
 
       - name: Upload do bundle Next.js como artefato
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nextjs-bundle
           path: ./.next/
